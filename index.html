@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GXVideos — Streaming</title>
+<link rel="icon" href="https://raw.githubusercontent.com/gamesistem/GXVideos/main/GXVideos.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ======================= BOOT ======================= -->
+<div id="boot-screen">
+  <div class="boot-logo">
+    <img id="boot-logo-img" src="" alt="GXVideos" onerror="this.style.display='none'">
+    <span>GXVideos</span>
+  </div>
+  <div class="boot-bar"><i></i></div>
+  <div class="timecode" id="boot-status">iniciando armazenamento local…</div>
+</div>
+
+<div id="toast-host"></div>
+
+<!-- ======================= ACCOUNT GATE ======================= -->
+<div id="screen-gate" class="gate hidden">
+  <div class="gate-panel" id="gate-panel-content"></div>
+</div>
+
+<!-- ======================= PROFILE PICKER ======================= -->
+<div id="screen-profiles" class="profiles-screen hidden">
+  <h1 id="profiles-title">Quem está assistindo?</h1>
+  <div class="profiles-grid" id="profiles-grid"></div>
+  <div style="display:flex; gap:10px;">
+    <button class="btn btn-ghost btn-sm" id="btn-switch-account">Trocar de conta</button>
+    <button class="btn btn-ghost btn-sm" id="btn-manage-profiles">Gerenciar perfis</button>
+  </div>
+</div>
+
+<!-- ======================= APP SHELL ======================= -->
+<div id="app-shell" class="hidden">
+  <aside class="sidebar">
+    <div class="brand">
+      <img id="sidebar-logo" src="" alt="" onerror="this.style.visibility='hidden'">
+      <b>GXVideos</b>
+    </div>
+
+    <div class="search-box" style="display:none" id="sidebar-search"></div>
+
+    <nav class="nav-group">
+      <button class="nav-item active" data-view="browse"><span class="ic">▣</span> Explorar</button>
+      <button class="nav-item" data-view="following"><span class="ic">♥</span> Seguindo</button>
+      <button class="nav-item" data-view="library"><span class="ic">◧</span> Meus jogos/mídias</button>
+      <button class="nav-item" data-view="downloads"><span class="ic">⭳</span> Downloads locais</button>
+      <button class="nav-item" data-view="settings"><span class="ic">⚙</span> Configurações</button>
+    </nav>
+
+    <div class="nav-label">Canais seguidos</div>
+    <div class="followed-list" id="followed-list"></div>
+
+    <div class="sidebar-footer" id="sidebar-profile-footer"></div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="search-box">
+        <span>🔍</span>
+        <input id="global-search" type="text" placeholder="Buscar canais, jogos, conteúdo custom…">
+      </div>
+      <div class="topbar-spacer"></div>
+      <button class="icon-btn" id="btn-sync" title="Sincronizar com GitHub">☁</button>
+      <button class="icon-btn" id="btn-parental" title="Bloqueio parental">🛡</button>
+      <button class="icon-btn" id="btn-open-profiles" title="Trocar de perfil">⇄</button>
+    </div>
+
+    <div class="view" id="view-root"></div>
+  </div>
+</div>
+
+<div id="modal-host"></div>
+
+<script src="js/config.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/github.js"></script>
+<script src="js/media.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/content.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
