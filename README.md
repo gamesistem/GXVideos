@@ -51,18 +51,25 @@ custom (repositórios e sites) e bloqueio parental.
 
 ## Estrutura
 
+Todos os arquivos ficam na raiz do projeto (estrutura plana — importante para
+o GitHub Pages/upload manual, onde subpastas costumam se perder):
+
 ```
 index.html
-css/style.css        → design system (tema, componentes)
-js/config.js         → constantes globais (repositório oficial, chaves de storage)
-js/storage.js        → localStorage + IndexedDB + salvar em pasta do dispositivo
-js/github.js         → wrapper da API REST do GitHub (leitura/gravação)
-js/media.js          → sugestões de imagens (Picsum/Unsplash) e GIFs (Giphy)
-js/auth.js           → contas, perfis, sessão, sync online, bloqueio parental
-js/content.js        → catálogo padrão + agregação de fontes custom
-js/ui.js             → toda a renderização de telas/modais
-js/main.js           → boot da aplicação
+style.css       → design system (tema, componentes)
+config.js       → constantes globais (repositório oficial, chaves de storage)
+storage.js      → localStorage + IndexedDB + salvar em pasta do dispositivo
+github.js       → wrapper da API REST do GitHub (leitura/gravação)
+media.js        → sugestões de imagens (Picsum/Unsplash) e GIFs (Giphy)
+auth.js         → contas, perfis, sessão, sync online, bloqueio parental
+content.js      → catálogo padrão + agregação de fontes custom
+ui.js           → toda a renderização de telas/modais
+main.js         → boot da aplicação
 ```
+
+**Importante ao subir para o GitHub:** envie todos os arquivos direto na
+raiz do repositório (não dentro de pastas `css/` ou `js/`) — o `index.html`
+referencia `style.css`, `config.js` etc. sem prefixo de pasta.
 
 ## Limitações honestas
 
