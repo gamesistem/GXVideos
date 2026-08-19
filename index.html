@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GXVideos - Streaming Platform</title>
+    
+    <!-- Tailwind CSS para estilização rápida e responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome para ícones -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #141414;
+            color: #ffffff;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* Scrollbar customizada */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #141414; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* Animações e Transições */
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .scale-up { transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+        .scale-up:hover { transform: scale(1.05); z-index: 20; box-shadow: 0 10px 20px rgba(0,0,0,0.8); }
+
+        /* Estilos do Perfil */
+        .profile-img-container {
+            width: 150px; height: 150px;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            background-size: cover;
+            background-position: center;
+        }
+        .profile-card:hover .profile-img-container {
+            border-color: #ffffff !important;
+        }
+        
+        /* Modais */
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+        }
+
+        /* Carrossel de Filmes */
+        .movie-row {
+            display: flex;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding: 20px 0;
+            gap: 10px;
+        }
+        .movie-row::-webkit-scrollbar { display: none; }
+        
+        .movie-card {
+            min-width: 200px;
+            height: 300px;
+            border-radius: 8px;
+            background-color: #222;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            position: relative;
+        }
+        .movie-info {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            padding: 20px 10px 10px 10px;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .movie-card:hover .movie-info { opacity: 1; }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .toast {
+            background: #333; color: white; padding: 12px 20px;
+            border-radius: 4px; border-left: 4px solid #E50914;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            animation: slideIn 0.3s forwards, fadeOut 0.5s 2.5s forwards;
+        }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        
+        /* Hero Banner */
+        .hero-banner {
+            height: 70vh;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .hero-vignette {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(to right, rgba(20,20,20,0.9) 0%, transparent 70%),
+                        linear-gradient(to top, #141414 0%, transparent 40%);
+        }
+
+        /* Efeitos Especiais de Bordas (Customização de Perfil) */
+        .border-glowing { box-shadow: 0 0 15px currentColor; }
+        .border-dashed { border-style: dashed; }
+        .border-double { border-style: double; border-width: 6px !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Contêiner de Notificações -->
+    <div id="toast-container"></div>
+
+    <!-- TELA 1: Seleção de Perfis -->
+    <div id="view-profiles" class="fixed inset-0 flex flex-col items-center justify-center bg-[#141414] z-50 fade-in">
+        <h1 class="text-4xl md:text-5xl font-bold mb-10 text-center">Quem está assistindo?</h1>
+        <div id="profiles-container" class="flex flex-wrap justify-center gap-8 mb-12 max-w-5xl">
+            <!-- Perfis injetados via JS -->
+        </div>
+        <button onclick="UI.showProfileManager()" class="border border-gray-500 text-gray-500 hover:text-white hover:border-white px-6 py-2 uppercase tracking-widest text-sm transition-colors">
+            Gerenciar Perfis
+        </button>
+    </div>
+
+    <!-- TELA 2: Plataforma Principal -->
+    <div id="view-main" class="hidden min-h-screen bg-[#141414]">
+        <!-- Navbar -->
+        <nav class="fixed w-full z-40 transition-all duration-300 bg-gradient-to-b from-black/80 to-transparent" id="navbar">
+            <div class="px-4 md:px-12 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-8">
+                    <!-- Logo Oficial do Repositório -->
+                    <img src="https://raw.githubusercontent.com/gamesistem/GXVideos/main/GXVideos.png" 
+                         onerror="this.src='https://placehold.co/200x50/141414/E50914?text=GXVideos'" 
+                         alt="GXVideos Logo" class="h-8 md:h-10 cursor-pointer">
+                    <ul class="hidden md:flex gap-4 text-sm font-semibold text-gray-300">
+                        <li class="text-white cursor-pointer hover:text-gray-300 transition">Início</li>
+                        <li class="cursor-pointer hover:text-gray-300 transition">Séries</li>
+                        <li class="cursor-pointer hover:text-gray-300 transition">Filmes</li>
+                        <li class="cursor-pointer hover:text-gray-300 transition">Repositórios Custom</li>
+                    </ul>
+                </div>
+                <div class="flex items-center gap-6">
+                    <i class="fas fa-search text-xl cursor-pointer hover:text-gray-400"></i>
+                    <i onclick="UI.showSettings()" class="fas fa-cog text-xl cursor-pointer hover:text-gray-400" title="Configurações"></i>
+                    <div class="relative group cursor-pointer" onclick="UI.logoutProfile()">
+                        <div id="nav-profile-img" class="w-8 h-8 rounded bg-gray-600 bg-cover bg-center"></div>
+                        <div class="absolute right-0 top-8 hidden group-hover:block bg-black/90 border border-gray-800 rounded p-2 text-xs w-24 text-center">
+                            Sair do Perfil
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Banner -->
+        <div id="hero-banner" class="hero-banner flex items-center" style="background-image: url('https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=2070&auto=format&fit=crop');">
+            <div class="hero-vignette"></div>
+            <div class="relative z-10 px-4 md:px-12 w-full md:w-1/2">
+                <h1 class="text-5xl md:text-7xl font-bold mb-4 drop-shadow-lg" id="hero-title">GXVideos Original</h1>
+                <p class="text-lg md:text-xl mb-6 drop-shadow-md line-clamp-3" id="hero-desc">Bem-vindo à plataforma de streaming mais customizável. Acesse conteúdos locais, adicione repositórios externos e sincronize tudo na nuvem.</p>
+                <div class="flex gap-4">
+                    <button class="bg-white text-black px-8 py-2 md:py-3 rounded font-bold hover:bg-gray-200 transition flex items-center gap-2">
+                        <i class="fas fa-play"></i> Assistir
+                    </button>
+                    <button class="bg-gray-500/70 text-white px-8 py-2 md:py-3 rounded font-bold hover:bg-gray-500/90 transition flex items-center gap-2">
+                        <i class="fas fa-info-circle"></i> Mais Informações
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conteúdo / Filas -->
+        <div class="px-4 md:px-12 py-8 -mt-20 relative z-20" id="content-rows">
+            <!-- Filas injetadas via JS -->
+        </div>
+        
+        <footer class="text-center text-gray-500 py-10 text-sm">
+            GXVideos Plataforma &copy; 2026. Desenvolvido para a Web.
+        </footer>
+    </div>
+
+    <!-- MODAL: PLAYER INTEGRADO (Novo) -->
+    <div id="modal-player" class="hidden fixed inset-0 bg-black z-[60] flex flex-col">
+        <div class="flex justify-between items-center p-4 bg-gradient-to-b from-black to-transparent absolute top-0 w-full z-10 pointer-events-none">
+            <h3 id="player-title" class="text-xl font-bold drop-shadow-md pointer-events-auto">Assistindo</h3>
+            <button onclick="UI.hidePlayer()" class="text-white hover:text-[#E50914] text-3xl transition pointer-events-auto shadow-black drop-shadow-lg"><i class="fas fa-times-circle"></i></button>
+        </div>
+        <div class="flex-1 w-full h-full bg-black flex items-center justify-center relative" id="player-container">
+            <div class="absolute inset-0 flex items-center justify-center text-gray-500 z-0"><i class="fas fa-circle-notch fa-spin text-4xl"></i></div>
+            <iframe id="player-iframe" class="w-full h-full border-none relative z-10" allowfullscreen allow="autoplay; fullscreen"></iframe>
+        </div>
+    </div>
+
+    <!-- MODAL: PIN PAD (Controle Parental) -->
+    <div id="modal-pin" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center">
+        <div class="bg-[#141414] p-8 rounded-lg border border-gray-800 text-center max-w-sm w-full">
+            <h2 class="text-2xl font-bold mb-2">Controle Parental</h2>
+            <p class="text-gray-400 text-sm mb-6">Insira o PIN para acessar este perfil.</p>
+            <div class="flex justify-center gap-2 mb-6">
+                <input type="password" id="pin-input" class="w-32 bg-gray-800 text-center text-2xl py-2 rounded text-white tracking-[0.5em] outline-none border border-transparent focus:border-[#E50914]" maxlength="4">
+            </div>
+            <div class="flex gap-4 justify-center">
+                <button onclick="UI.cancelPin()" class="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600 transition">Cancelar</button>
+                <button onclick="App.verifyPin()" class="px-4 py-2 bg-[#E50914] rounded hover:bg-red-700 transition">Acessar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIÇÃO/CRIAÇÃO DE PERFIL -->
+    <div id="modal-profile" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="bg-[#141414] p-6 md:p-8 rounded-lg border border-gray-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <h2 class="text-3xl font-bold mb-6 border-b border-gray-700 pb-2" id="profile-modal-title">Editar Perfil</h2>
+            
+            <div class="flex flex-col md:flex-row gap-8">
+                <!-- Preview -->
+                <div class="flex flex-col items-center gap-4">
+                    <div id="profile-preview-img" class="w-32 h-32 rounded bg-cover bg-center border-2 border-gray-500"></div>
+                    <div class="text-center">
+                        <span id="profile-preview-name" class="font-bold block">Nome</span>
+                        <span id="profile-preview-status" class="text-xs text-gray-400">Status</span>
+                    </div>
+                </div>
+
+                <!-- Formulário -->
+                <div class="flex-1 space-y-4">
+                    <input type="hidden" id="prof-id">
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Nome</label>
+                        <input type="text" id="prof-name" class="w-full bg-gray-800 p-2 rounded text-white outline-none focus:ring-1 focus:ring-white">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Status Customizado / Bio</label>
+                        <input type="text" id="prof-status" placeholder="Ex: Assistindo animes..." class="w-full bg-gray-800 p-2 rounded text-white outline-none focus:ring-1 focus:ring-white">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Avatar URL (Imagem ou GIF)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="prof-avatar" placeholder="https://..." class="flex-1 bg-gray-800 p-2 rounded text-white outline-none focus:ring-1 focus:ring-white">
+                            <button onclick="UI.generateRandomAvatar()" class="bg-gray-700 px-3 rounded hover:bg-gray-600" title="Gerar Aleatório"><i class="fas fa-dice"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Cor do Tema</label>
+                            <input type="color" id="prof-color" value="#E50914" class="w-full h-10 rounded bg-gray-800 border-none cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Estilo da Borda</label>
+                            <select id="prof-border" class="w-full bg-gray-800 p-2 rounded text-white outline-none">
+                                <option value="solid">Sólida (Padrão)</option>
+                                <option value="border-dashed">Tracejada</option>
+                                <option value="border-double">Dupla</option>
+                                <option value="border-glowing">Brilhante (Neon)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 mt-4">
+                        <input type="checkbox" id="prof-kids" class="w-5 h-5 accent-[#E50914]">
+                        <label for="prof-kids" class="text-sm font-bold">Perfil Infantil (Kids)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-between border-t border-gray-700 pt-4">
+                <button onclick="App.deleteProfile()" id="btn-delete-profile" class="text-gray-400 hover:text-red-500 transition">Excluir Perfil</button>
+                <div class="flex gap-4">
+                    <button onclick="UI.hideProfileModal()" class="px-6 py-2 bg-transparent border border-gray-500 rounded hover:border-white transition">Cancelar</button>
+                    <button onclick="App.saveProfile()" class="px-6 py-2 bg-white text-black font-bold rounded hover:bg-gray-200 transition">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIGURAÇÕES E DADOS -->
+    <div id="modal-settings" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="bg-[#141414] p-6 md:p-8 rounded-lg border border-gray-800 w-full max-w-3xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-2">
+                <h2 class="text-3xl font-bold">Configurações GXVideos</h2>
+                <i onclick="UI.hideSettings()" class="fas fa-times text-2xl cursor-pointer hover:text-gray-400"></i>
+            </div>
+
+            <div class="space-y-8">
+                <!-- Seção: Armazenamento e Nuvem -->
+                <section class="bg-gray-900/50 p-4 rounded border border-gray-800">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2"><i class="fab fa-github"></i> Sincronização GitHub</h3>
+                    <p class="text-sm text-gray-400 mb-4">Salve suas configurações e perfis na nuvem para acessar de outros dispositivos usando a API do GitHub.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Token de Acesso Pessoal (PAT)</label>
+                            <input type="password" id="set-git-token" placeholder="ghp_..." class="w-full bg-gray-800 p-2 rounded text-white outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Repositório (usuário/repo)</label>
+                            <input type="text" id="set-git-repo" value="gamesistem/GXVideos" class="w-full bg-gray-800 p-2 rounded text-white outline-none">
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="GitHubAPI.uploadData()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-bold transition flex items-center gap-2">
+                            <i class="fas fa-cloud-upload-alt"></i> Salvar na Nuvem
+                        </button>
+                        <button onclick="GitHubAPI.downloadData()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm font-bold transition flex items-center gap-2">
+                            <i class="fas fa-cloud-download-alt"></i> Baixar da Nuvem
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Seção: Armazenamento Local / PC -->
+                <section class="bg-gray-900/50 p-4 rounded border border-gray-800">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2"><i class="fas fa-hdd"></i> Salvamento no Dispositivo</h3>
+                    <p class="text-sm text-gray-400 mb-4">Faça backup dos seus dados localmente no seu PC (Download/Upload de arquivo JSON).</p>
+                    <div class="flex gap-2">
+                        <button onclick="StorageManager.exportToPC()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm font-bold transition">
+                            <i class="fas fa-file-export"></i> Exportar Dados
+                        </button>
+                        <input type="file" id="import-file" class="hidden" accept=".json" onchange="StorageManager.importFromPC(event)">
+                        <button onclick="document.getElementById('import-file').click()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm font-bold transition">
+                            <i class="fas fa-file-import"></i> Importar Dados
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Seção: Controle Parental -->
+                <section class="bg-gray-900/50 p-4 rounded border border-gray-800">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2"><i class="fas fa-lock"></i> Controle Parental</h3>
+                    <div class="flex items-center gap-4">
+                        <input type="password" id="set-pin" placeholder="Novo PIN (4 dígitos)" maxlength="4" class="bg-gray-800 p-2 rounded text-white outline-none w-48 text-center tracking-[0.2em]">
+                        <button onclick="App.updatePin()" class="bg-white text-black px-4 py-2 rounded font-bold hover:bg-gray-200 transition">Definir PIN</button>
+                        <button onclick="App.removePin()" class="bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-700 transition">Remover PIN</button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Perfis marcados como "Kids" não exigem PIN. Perfis normais exigirão o PIN se definido.</p>
+                </section>
+
+                <!-- Seção: Repositórios de Conteúdo Customizados -->
+                <section class="bg-gray-900/50 p-4 rounded border border-gray-800">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2"><i class="fas fa-globe"></i> Sites Customizados (Smart Scraper)</h3>
+                    <p class="text-sm text-gray-400 mb-4">Adicione a URL de um site de streaming. O GXVideos vai agir como interface, absorvendo os vídeos e buscas do site automaticamente.</p>
+                    
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="new-source-url" placeholder="https://sitedefilmes.com" class="flex-1 bg-gray-800 p-2 rounded text-white outline-none">
+                        <input type="text" id="new-source-name" placeholder="Nome (Ex: MegaFilmes)" class="w-1/3 bg-gray-800 p-2 rounded text-white outline-none">
+                        <button onclick="App.addCustomSource()" class="bg-[#E50914] px-4 py-2 rounded font-bold hover:bg-red-700 transition">Vincular</button>
+                    </div>
+
+                    <div id="sources-list" class="space-y-2">
+                        <!-- Fontes renderizadas aqui -->
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sistema de Notificações
+        const Toast = {
+            show(message, type = 'info') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                if(type === 'error') toast.style.borderLeftColor = 'red';
+                if(type === 'success') toast.style.borderLeftColor = 'green';
+                toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'} mr-2"></i> ${message}`;
+                container.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            }
+        };
+
+        // Utilitários Base64 compatíveis com UTF-8
+        const Base64 = {
+            encode: (str) => window.btoa(unescape(encodeURIComponent(str))),
+            decode: (str) => decodeURIComponent(escape(window.atob(str)))
+        };
+
+        const WebScraper = {
+            // Corrige URLs relativas que vêm do site raspado
+            fixUrl(url, baseUrl) {
+                if (!url) return '';
+                if (url.startsWith('http')) return url;
+                if (url.startsWith('//')) return 'https:' + url;
+                try { return new URL(url, baseUrl).href; } catch(e) { return url; }
+            },
+
+            async extract(siteUrl, searchQuery = '') {
+                let targetUrl = siteUrl;
+                if (searchQuery) {
+                    targetUrl = `${siteUrl.replace(/\/$/, '')}/?s=${encodeURIComponent(searchQuery)}`;
+                }
+                
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+                
+                try {
+                    const response = await fetch(proxyUrl);
+                    const data = await response.json();
+                    
+                    if (!data.contents) throw new Error("Conteúdo vazio");
+
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(data.contents, 'text/html');
+                    
+                    const items = [];
+                    
+                    // 1. Coleta seletores comuns de mídia, animes, séries e posts
+                    const candidates = doc.querySelectorAll('article, .post, .item, .movie, .video, .episode, .elementor-post, .l-item, .box');
+                    const elementsToScan = candidates.length > 0 ? candidates : doc.querySelectorAll('a');
+
+                    elementsToScan.forEach(el => {
+                        const a = el.tagName === 'A' ? el : el.querySelector('a');
+                        const img = el.querySelector('img') || doc.querySelector('img'); // Fallback para achar imagem na página caso o card não traga direta
+                        
+                        if (a) {
+                            let title = a.title || (img ? img.alt : '') || a.innerText.trim();
+                            let href = this.fixUrl(a.getAttribute('href'), siteUrl);
+                            let src = img ? this.fixUrl(img.getAttribute('data-src') || img.getAttribute('data-lazy-src') || img.getAttribute('src'), siteUrl) : 'https://placehold.co/400x600/141414/ffffff?text=Stream';
+                            
+                            // Heurística expandida: Filtra links de vídeo / séries / temporadas / episodios / animes
+                            const isVideoOrSeriesLink = href && (
+                                href.includes('/video/') || 
+                                href.includes('/episodio/') || 
+                                href.includes('/anime/') || 
+                                href.includes('/serie/') || 
+                                href.includes('/watch/') || 
+                                href.includes('/ver/') ||
+                                href.includes('/filme/') ||
+                                href.includes('/season/') ||
+                                title.length > 2
+                            );
+
+                            if (title && href && isVideoOrSeriesLink && !href.includes('javascript:') && !items.find(i => i.url === href)) {
+                                // Detecta se é temporada ou episódio para adicionar label inteligente
+                                let badge = '';
+                                if(href.includes('/anime/')) badge = 'Anime / Série';
+                                else if(href.includes('/episodio/') || href.includes('episodio')) badge = 'Episódio';
+                                else if(href.includes('/season/')) badge = 'Temporada';
+
+                                items.push({ 
+                                    title: title.replace(/Assistir|Online|Dublado|Legendado/gi, '').trim() || 'Conteúdo', 
+                                    img: src, 
+                                    url: href,
+                                    badge: badge
+                                });
+                            }
+                        }
+                    });
+
+                    // 2. Fallback de varredura profunda: Se poucos itens foram achados, coleta TODOS os links de <a> que parecem vídeo/série
+                    if (items.length < 5) {
+                        doc.querySelectorAll('a').forEach(a => {
+                            let href = this.fixUrl(a.getAttribute('href'), siteUrl);
+                            let text = a.innerText.trim();
+                            if (href && text && text.length > 3 && !items.find(i => i.url === href)) {
+                                items.push({
+                                    title: text.replace(/Assistir|Online|Dublado|Legendado/gi, '').trim(),
+                                    img: 'https://placehold.co/400x600/141414/ffffff?text=Mídia',
+                                    url: href,
+                                    badge: 'Link Direto'
+                                });
+                            }
+                        });
+                    }
+                    
+                    // Retorna até 30 itens para exibir uma grade rica de conteúdo
+                    return items.slice(0, 30);
+                } catch (e) {
+                    console.error(`Erro ao fazer scraping de ${siteUrl}:`, e);
+                    return [];
+                }
+            }
+        };
+
+        const AppState = {
+            data: {
+                profiles: [
+                    { 
+                        id: '1', name: 'Admin', status: 'Gerenciando GXVideos', 
+                        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Admin&backgroundColor=141414', 
+                        color: '#E50914', borderStyle: 'solid', isKids: false 
+                    },
+                    { 
+                        id: '2', name: 'Kids', status: 'Desenhos', 
+                        avatar: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Kids', 
+                        color: '#00a8ff', borderStyle: 'border-dashed', isKids: true 
+                    }
+                ],
+                settings: {
+                    githubToken: '',
+                    githubRepo: 'gamesistem/GXVideos',
+                    parentalPin: '',
+                    customSources: []
+                }
+            },
+            currentUser: null,
+            targetUserForPin: null,
+            isManagingProfiles: false,
+
+            // Conteúdo Mock para preencher a plataforma visualmente
+            defaultContent: [
+                {
+                    title: "Adicionados Recentemente",
+                    items: [
+                        { title: "Cyberpunk Edgerunners", img: "https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=400&h=600&fit=crop", url: "#" },
+                        { title: "Natureza Profunda", img: "https://images.unsplash.com/photo-1518182170546-076616fd4484?q=80&w=400&h=600&fit=crop", url: "#" },
+                        { title: "Espaço Sideral", img: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=400&h=600&fit=crop", url: "#" },
+                        { title: "Neon City", img: "https://images.unsplash.com/photo-1555680202-c86f0e12f086?q=80&w=400&h=600&fit=crop", url: "#" },
+                        { title: "Carros Clássicos", img: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=400&h=600&fit=crop", url: "#" }
+                    ]
+                },
+                {
+                    title: "Ação e Aventura",
+                    items: [
+                        { title: "Batalha Épica", img: "https://images.unsplash.com/photo-1542840410-3092f99611a3?q=80&w=400&h=600&fit=crop", url: "#" },
+                        { title: "Missão Secreta", img: "https://images.unsplash.com/photo-1508614999368-9260051292e5?q=80&w=400&h=600&fit=crop", url: "#" },
+                        { title: "Sobrevivência", img: "https://images.unsplash.com/photo-1533282960533-51328aa26626?q=80&w=400&h=600&fit=crop", url: "#" }
+                    ]
+                }
+            ]
+        };
+
+        const StorageManager = {
+            saveLocal() {
+                localStorage.setItem('GXVideos_Data', JSON.stringify(AppState.data));
+            },
+            loadLocal() {
+                const saved = localStorage.getItem('GXVideos_Data');
+                if (saved) {
+                    try {
+                        AppState.data = JSON.parse(saved);
+                    } catch(e) { console.error("Erro ao carregar dados locais"); }
+                }
+            },
+            exportToPC() {
+                const dataStr = JSON.stringify(AppState.data, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'GXVideos_Backup.json';
+                a.click();
+                URL.revokeObjectURL(url);
+                Toast.show('Dados exportados para o PC com sucesso!', 'success');
+            },
+            importFromPC(event) {
+                const file = event.target.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        AppState.data = JSON.parse(e.target.result);
+                        StorageManager.saveLocal();
+                        UI.renderProfiles();
+                        UI.renderSettings();
+                        Toast.show('Dados importados com sucesso!', 'success');
+                    } catch(err) {
+                        Toast.show('Arquivo JSON inválido.', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        };
+
+        const GitHubAPI = {
+            fileName: 'gxvideos_data.json',
+            
+            async uploadData() {
+                const token = document.getElementById('set-git-token').value.trim();
+                const repo = document.getElementById('set-git-repo').value.trim();
+                
+                if(!token || !repo) {
+                    return Toast.show('Preencha o Token e o Repositório.', 'error');
+                }
+
+                AppState.data.settings.githubToken = token;
+                AppState.data.settings.githubRepo = repo;
+                StorageManager.saveLocal();
+
+                Toast.show('Enviando dados para o GitHub...');
+                
+                const url = `https://api.github.com/repos/${repo}/contents/${this.fileName}`;
+                const headers = {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                };
+
+                try {
+                    // 1. Obter SHA se existir
+                    let sha = undefined;
+                    const getRes = await fetch(url, { headers });
+                    if (getRes.ok) {
+                        const fileData = await getRes.json();
+                        sha = fileData.sha;
+                    }
+
+                    // 2. Limpar token de segurança antes de subir para evitar vazar o próprio token no arquivo público
+                    const dataToUpload = JSON.parse(JSON.stringify(AppState.data));
+                    dataToUpload.settings.githubToken = ''; // Nunca salva o token no arquivo
+
+                    const content = Base64.encode(JSON.stringify(dataToUpload, null, 2));
+                    
+                    const body = {
+                        message: "Atualiza configs do GXVideos via Web",
+                        content: content
+                    };
+                    if (sha) body.sha = sha;
+
+                    const putRes = await fetch(url, { method: 'PUT', headers, body: JSON.stringify(body) });
+                    if (!putRes.ok) throw new Error('Falha ao subir arquivo');
+                    
+                    Toast.show('Dados sincronizados com o GitHub com sucesso!', 'success');
+                } catch (error) {
+                    Toast.show('Erro ao sincronizar. Verifique o Token, permissões e repositório.', 'error');
+                    console.error(error);
+                }
+            },
+
+            async downloadData() {
+                const token = document.getElementById('set-git-token').value.trim();
+                const repo = document.getElementById('set-git-repo').value.trim();
+                if(!repo) return Toast.show('Preencha o Repositório.', 'error');
+
+                Toast.show('Baixando dados do GitHub...');
+                const url = `https://api.github.com/repos/${repo}/contents/${this.fileName}`;
+                const headers = { 'Accept': 'application/vnd.github.v3+json' };
+                if (token) headers['Authorization'] = `Bearer ${token}`; // opcional se repo for publico
+
+                try {
+                    const res = await fetch(url, { headers });
+                    if (!res.ok) throw new Error('Arquivo não encontrado ou sem acesso.');
+                    
+                    const data = await res.json();
+                    const jsonStr = Base64.decode(data.content);
+                    const parsed = JSON.parse(jsonStr);
+                    
+                    // Restaura o token local que não vem no arquivo
+                    parsed.settings.githubToken = token;
+                    AppState.data = parsed;
+                    StorageManager.saveLocal();
+                    
+                    UI.renderProfiles();
+                    UI.renderSettings();
+                    Toast.show('Dados importados da nuvem!', 'success');
+                } catch (error) {
+                    Toast.show('Erro ao baixar dados do GitHub.', 'error');
+                    console.error(error);
+                }
+            }
+        };
+
+        const App = {
+            init() {
+                StorageManager.loadLocal();
+                UI.renderProfiles();
+                
+                // Efeito Scroll Navbar
+                window.addEventListener('scroll', () => {
+                    const nav = document.getElementById('navbar');
+                    if (window.scrollY > 50) {
+                        nav.classList.add('bg-black');
+                        nav.classList.remove('bg-gradient-to-b', 'from-black/80', 'to-transparent');
+                    } else {
+                        nav.classList.remove('bg-black');
+                        nav.classList.add('bg-gradient-to-b', 'from-black/80', 'to-transparent');
+                    }
+                });
+            },
+
+            selectProfile(id) {
+                if(AppState.isManagingProfiles) {
+                    UI.showProfileModal(id);
+                    return;
+                }
+
+                const profile = AppState.data.profiles.find(p => p.id === id);
+                if (!profile.isKids && AppState.data.settings.parentalPin) {
+                    AppState.targetUserForPin = profile;
+                    document.getElementById('modal-pin').classList.remove('hidden');
+                    document.getElementById('pin-input').value = '';
+                    document.getElementById('pin-input').focus();
+                } else {
+                    this.login(profile);
+                }
+            },
+
+            login(profile) {
+                AppState.currentUser = profile;
+                document.getElementById('modal-pin').classList.add('hidden');
+                document.getElementById('view-profiles').classList.add('hidden');
+                document.getElementById('view-main').classList.remove('hidden');
+                
+                // Configura interface baseada no perfil
+                document.getElementById('nav-profile-img').style.backgroundImage = `url('${profile.avatar}')`;
+                
+                // Se o perfil tem cor customizada, aplica detalhes sutis (ex: borda no dropdown)
+                document.getElementById('nav-profile-img').style.border = `2px solid ${profile.color}`;
+
+                UI.renderContent();
+            },
+
+            verifyPin() {
+                const pin = document.getElementById('pin-input').value;
+                if (pin === AppState.data.settings.parentalPin) {
+                    this.login(AppState.targetUserForPin);
+                } else {
+                    Toast.show('PIN Incorreto', 'error');
+                    document.getElementById('pin-input').value = '';
+                }
+            },
+
+            updatePin() {
+                const pin = document.getElementById('set-pin').value;
+                if(pin.length !== 4) return Toast.show('O PIN deve ter 4 dígitos.', 'error');
+                AppState.data.settings.parentalPin = pin;
+                StorageManager.saveLocal();
+                Toast.show('PIN configurado com sucesso!', 'success');
+            },
+            
+            removePin() {
+                AppState.data.settings.parentalPin = '';
+                document.getElementById('set-pin').value = '';
+                StorageManager.saveLocal();
+                Toast.show('PIN removido.', 'success');
+            },
+
+            saveProfile() {
+                // Correção do Bug de ID e criação:
+                const idInput = document.getElementById('prof-id').value;
+                const isNew = !idInput || idInput === '';
+                const id = isNew ? String(Date.now()) : idInput;
+                
+                const profile = {
+                    id: id,
+                    name: document.getElementById('prof-name').value || 'Novo Perfil',
+                    status: document.getElementById('prof-status').value,
+                    avatar: document.getElementById('prof-avatar').value || `https://api.dicebear.com/7.x/initials/svg?seed=${Math.random()}`,
+                    color: document.getElementById('prof-color').value,
+                    borderStyle: document.getElementById('prof-border').value,
+                    isKids: document.getElementById('prof-kids').checked
+                };
+
+                if (isNew) {
+                    AppState.data.profiles.push(profile);
+                } else {
+                    const idx = AppState.data.profiles.findIndex(p => p.id === id);
+                    if(idx > -1) AppState.data.profiles[idx] = profile;
+                }
+
+                StorageManager.saveLocal();
+                UI.hideProfileModal();
+                UI.renderProfiles();
+                Toast.show('Perfil salvo!', 'success');
+            },
+
+            deleteProfile() {
+                const id = document.getElementById('prof-id').value;
+                if(!id) return;
+                
+                if(AppState.data.profiles.length <= 1) {
+                    return Toast.show('Você precisa de pelo menos 1 perfil.', 'error');
+                }
+
+                AppState.data.profiles = AppState.data.profiles.filter(p => p.id !== id);
+                StorageManager.saveLocal();
+                UI.hideProfileModal();
+                UI.renderProfiles();
+                Toast.show('Perfil excluído.', 'info');
+            },
+
+            async addCustomSource() {
+                const url = document.getElementById('new-source-url').value.trim();
+                const name = document.getElementById('new-source-name').value.trim() || 'Site Customizado';
+                
+                if(!url) return Toast.show('Insira a URL do site.', 'error');
+                if(!url.startsWith('http')) return Toast.show('A URL deve começar com http:// ou https://', 'error');
+                
+                try {
+                    Toast.show('Testando conexão e inteligência do scraper...', 'info');
+                    
+                    // Testa se o Scraper consegue extrair algo do site
+                    const items = await WebScraper.extract(url);
+                    
+                    if(items.length === 0) {
+                        Toast.show('O site foi adicionado, mas o GXVideos não conseguiu encontrar capas na página inicial. A interface pode não ficar ideal.', 'error');
+                    } else {
+                        Toast.show(`Sucesso! ${items.length} conteúdos identificados na interface.`, 'success');
+                    }
+
+                    AppState.data.settings.customSources.push({ url, title: name });
+                    StorageManager.saveLocal();
+                    
+                    document.getElementById('new-source-url').value = '';
+                    document.getElementById('new-source-name').value = '';
+                    UI.renderSettings();
+                    
+                    if(AppState.currentUser) UI.renderContent();
+                    
+                } catch(e) {
+                    Toast.show('Falha ao conectar com o site.', 'error');
+                }
+            },
+
+            removeCustomSource(index) {
+                AppState.data.settings.customSources.splice(index, 1);
+                StorageManager.saveLocal();
+                UI.renderSettings();
+                if(AppState.currentUser) UI.renderContent();
+            },
+
+            openExternalLink(url) {
+                Toast.show('Redirecionando para site original (pode exigir autenticação)...');
+                setTimeout(() => {
+                    window.open(url, '_blank');
+                }, 1500);
+            }
+        };
+
+        const UI = {
+            renderProfiles() {
+                const container = document.getElementById('profiles-container');
+                container.innerHTML = '';
+                
+                AppState.data.profiles.forEach(p => {
+                    // Monta os estilos customizados (Efeitos API/CSS)
+                    let borderClass = 'border-2 border-transparent';
+                    if (p.borderStyle === 'border-dashed') borderClass = 'border-2 border-dashed';
+                    if (p.borderStyle === 'border-double') borderClass = 'border-double';
+                    
+                    let shadowStyle = p.borderStyle === 'border-glowing' ? `box-shadow: 0 0 15px ${p.color}; border: 2px solid ${p.color};` : `border-color: ${p.color}40;`;
+
+                    const html = `
+                        <div class="flex flex-col items-center gap-3 cursor-pointer group profile-card w-32 md:w-40 relative" onclick="App.selectProfile('${p.id}')">
+                            ${AppState.isManagingProfiles ? `<div class="absolute inset-0 bg-black/50 z-10 flex items-center justify-center rounded-12"><i class="fas fa-pencil-alt text-3xl opacity-80"></i></div>` : ''}
+                            
+                            <div class="profile-img-container ${borderClass}" style="background-image: url('${p.avatar}'); ${shadowStyle} color: ${p.color};">
+                            </div>
+                            
+                            <div class="text-center">
+                                <span class="text-gray-400 group-hover:text-white transition font-semibold text-lg md:text-xl truncate block max-w-full">${p.name}</span>
+                                <span class="text-xs text-gray-500 truncate block max-w-full" style="color: ${p.color} !important; opacity: 0.8;">${p.status || ''}</span>
+                            </div>
+                            ${p.isKids ? `<span class="bg-blue-600 text-xs px-2 py-0.5 rounded absolute -top-2 -right-2 font-bold shadow-lg">KIDS</span>` : ''}
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('beforeend', html);
+                });
+
+                // Botão de Adicionar
+                if (AppState.data.profiles.length < 5 && !AppState.isManagingProfiles) {
+                    container.insertAdjacentHTML('beforeend', `
+                        <div class="flex flex-col items-center gap-3 cursor-pointer group profile-card w-32 md:w-40" onclick="UI.showProfileModal()">
+                            <div class="profile-img-container border-2 border-transparent flex items-center justify-center bg-gray-800 group-hover:bg-gray-700 transition">
+                                <i class="fas fa-plus text-5xl text-gray-500 group-hover:text-white"></i>
+                            </div>
+                            <span class="text-gray-400 group-hover:text-white transition font-semibold text-lg md:text-xl">Adicionar</span>
+                        </div>
+                    `);
+                }
+            },
+
+            showProfileManager() {
+                AppState.isManagingProfiles = !AppState.isManagingProfiles;
+                event.target.innerText = AppState.isManagingProfiles ? "Concluído" : "Gerenciar Perfis";
+                event.target.classList.toggle('bg-white');
+                event.target.classList.toggle('text-black');
+                this.renderProfiles();
+            },
+
+            showProfileModal(id = null) {
+                const modal = document.getElementById('modal-profile');
+                const title = document.getElementById('profile-modal-title');
+                const btnDelete = document.getElementById('btn-delete-profile');
+                
+                if (id) {
+                    const p = AppState.data.profiles.find(x => x.id === id);
+                    document.getElementById('prof-id').value = p.id;
+                    document.getElementById('prof-name').value = p.name;
+                    document.getElementById('prof-status').value = p.status || '';
+                    document.getElementById('prof-avatar').value = p.avatar;
+                    document.getElementById('prof-color').value = p.color;
+                    document.getElementById('prof-border').value = p.borderStyle;
+                    document.getElementById('prof-kids').checked = p.isKids;
+                    title.innerText = "Editar Perfil";
+                    btnDelete.classList.remove('hidden');
+                } else {
+                    // Correção: Limpar completamente para novo perfil
+                    document.getElementById('prof-id').value = '';
+                    document.getElementById('prof-name').value = '';
+                    document.getElementById('prof-status').value = '';
+                    document.getElementById('prof-color').value = '#E50914';
+                    document.getElementById('prof-border').value = 'solid';
+                    document.getElementById('prof-kids').checked = false;
+                    title.innerText = "Novo Perfil";
+                    btnDelete.classList.add('hidden');
+                    this.generateRandomAvatar();
+                }
+
+                this.updateProfilePreview();
+                
+                // Add event listeners for live preview
+                ['prof-name', 'prof-status', 'prof-avatar', 'prof-color', 'prof-border'].forEach(id => {
+                    document.getElementById(id).addEventListener('input', () => UI.updateProfilePreview());
+                });
+
+                modal.classList.remove('hidden');
+            },
+
+            hideProfileModal() {
+                document.getElementById('modal-profile').classList.add('hidden');
+            },
+
+            updateProfilePreview() {
+                const name = document.getElementById('prof-name').value || 'Nome';
+                const status = document.getElementById('prof-status').value || 'Status';
+                const avatar = document.getElementById('prof-avatar').value;
+                const color = document.getElementById('prof-color').value;
+                const border = document.getElementById('prof-border').value;
+
+                document.getElementById('profile-preview-name').innerText = name;
+                document.getElementById('profile-preview-status').innerText = status;
+                document.getElementById('profile-preview-status').style.color = color;
+                
+                const imgContainer = document.getElementById('profile-preview-img');
+                imgContainer.style.backgroundImage = `url('${avatar}')`;
+                
+                // Reset classes
+                imgContainer.className = 'w-32 h-32 rounded bg-cover bg-center';
+                imgContainer.style.boxShadow = 'none';
+                imgContainer.style.border = 'none';
+
+                if(border === 'border-glowing') {
+                    imgContainer.style.boxShadow = `0 0 15px ${color}`;
+                    imgContainer.style.border = `2px solid ${color}`;
+                } else if (border === 'border-dashed') {
+                    imgContainer.style.border = `2px dashed ${color}`;
+                } else if (border === 'border-double') {
+                    imgContainer.classList.add('border-double');
+                    imgContainer.style.borderColor = color;
+                } else {
+                    imgContainer.style.border = `2px solid ${color}`;
+                }
+            },
+
+            generateRandomAvatar() {
+                const styles = ['bottts', 'fun-emoji', 'identicon', 'lorelei', 'pixel-art'];
+                const style = styles[Math.floor(Math.random() * styles.length)];
+                const seed = Math.random().toString(36).substring(7);
+                document.getElementById('prof-avatar').value = `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=141414`;
+                this.updateProfilePreview();
+            },
+
+            logoutProfile() {
+                AppState.currentUser = null;
+                document.getElementById('view-main').classList.add('hidden');
+                document.getElementById('view-profiles').classList.remove('hidden');
+                // Limpar filas carregadas
+                document.getElementById('content-rows').innerHTML = '';
+            },
+
+            cancelPin() {
+                document.getElementById('modal-pin').classList.add('hidden');
+                AppState.targetUserForPin = null;
+            },
+
+            showSettings() {
+                this.renderSettings();
+                document.getElementById('modal-settings').classList.remove('hidden');
+            },
+            hideSettings() {
+                document.getElementById('modal-settings').classList.add('hidden');
+            },
+
+            renderSettings() {
+                document.getElementById('set-git-token').value = AppState.data.settings.githubToken || '';
+                document.getElementById('set-git-repo').value = AppState.data.settings.githubRepo || '';
+                document.getElementById('set-pin').value = ''; // Don't show actual PIN for security, just allow override
+                
+                const list = document.getElementById('sources-list');
+                list.innerHTML = '';
+                if(!AppState.data.settings.customSources || AppState.data.settings.customSources.length === 0) {
+                    list.innerHTML = '<p class="text-xs text-gray-500">Nenhum site vinculado.</p>';
+                } else {
+                    AppState.data.settings.customSources.forEach((src, idx) => {
+                        list.insertAdjacentHTML('beforeend', `
+                            <div class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700">
+                                <div class="truncate mr-4 text-sm">
+                                    <strong class="block text-white"><i class="fas fa-link mr-1"></i> ${src.title}</strong>
+                                    <span class="text-xs text-gray-400">${src.url}</span>
+                                </div>
+                                <button onclick="App.removeCustomSource(${idx})" class="text-red-500 hover:text-white p-2 transition"><i class="fas fa-trash"></i></button>
+                            </div>
+                        `);
+                    });
+                }
+            },
+
+            async renderContent(searchQuery = '') {
+                const container = document.getElementById('content-rows');
+                container.innerHTML = searchQuery ? `<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-3xl text-[#E50914]"></i><p class="mt-4">Buscando "${searchQuery}" em todos os sites...</p></div>` : '';
+
+                let hasRenderedSomething = false;
+
+                // Renderiza conteúdo padrão apenas se não estiver buscando (ou implementa busca simulada)
+                if(!searchQuery) {
+                    container.innerHTML = '';
+                    AppState.defaultContent.forEach(row => this.buildRowHtml(container, row));
+                    hasRenderedSomething = true;
+                } else {
+                    container.innerHTML = ''; // Limpa o loader se for buscar
+                }
+
+                // Absorve e renderiza sites customizados
+                if (AppState.data.settings.customSources && AppState.data.settings.customSources.length > 0) {
+                    if(!searchQuery) Toast.show('Sincronizando interfaces de sites externos...', 'info');
+
+                    for (const source of AppState.data.settings.customSources) {
+                        try {
+                            const items = await WebScraper.extract(source.url, searchQuery);
+                            if (items && items.length > 0) {
+                                this.buildRowHtml(container, { title: source.title, items: items }, true);
+                                hasRenderedSomething = true;
+                            }
+                        } catch (e) {
+                            console.warn("Falha ao raspar interface do site:", source.url);
+                        }
+                    }
+                }
+
+                if(!hasRenderedSomething && searchQuery) {
+                    container.innerHTML = `<div class="text-center py-20 text-gray-500"><i class="fas fa-search fa-3x mb-4"></i><p>Nenhum resultado encontrado para "${searchQuery}".</p></div>`;
+                }
+            },
+
+            showPlayer(url, title) {
+                document.getElementById('player-title').innerText = title || "Assistindo";
+                const iframe = document.getElementById('player-iframe');
+                
+                // Embutir o site inteiro dentro do GXVideos para usar o player nativo do site
+                iframe.src = url;
+                
+                document.getElementById('modal-player').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            },
+
+            hidePlayer() {
+                const iframe = document.getElementById('player-iframe');
+                iframe.src = ''; // Para o vídeo cortando a fonte
+                document.getElementById('modal-player').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            },
+
+            buildRowHtml(container, rowData, isExternal = false) {
+                let itemsHtml = '';
+                rowData.items.forEach(item => {
+                    const clickAction = isExternal 
+                        ? `UI.showPlayer('${item.url}', '${item.title.replace(/'/g, "\\'")}')` 
+                        : `Toast.show('Reproduzindo conteúdo local: ${item.title}')`;
+                    
+                    itemsHtml += `
+                        <div class="movie-card scale-up flex-shrink-0" style="background-image: url('${item.img || item.banner}');" onclick="${clickAction}">
+                            <div class="movie-info">
+                                <h4 class="font-bold text-sm drop-shadow-md truncate">${item.title}</h4>
+                                <div class="flex gap-1 mt-1">
+                                    ${isExternal ? '<span class="text-[9px] text-[#E50914] border border-[#E50914] px-1 rounded inline-block">Externo</span>' : ''}
+                                    ${item.badge ? `<span class="text-[9px] text-blue-400 border border-blue-400 px-1 rounded inline-block">${item.badge}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                const html = `
+                    <div class="mb-8">
+                        <h2 class="text-xl md:text-2xl font-bold mb-4 text-gray-200 border-l-4 pl-2" style="border-color: ${AppState.currentUser.color || '#E50914'}">
+                            ${rowData.title || rowData.sourceName}
+                        </h2>
+                        <div class="movie-row pb-4">
+                            ${itemsHtml}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            }
+        };
+
+        // Inicialização
+        window.onload = () => {
+            App.init();
+
+            // Adiciona sistema de busca global no Header que interage com o Scraper
+            const searchIcon = document.querySelector('.fa-search');
+            searchIcon.outerHTML = `
+                <div class="relative group flex items-center">
+                    <i class="fas fa-search text-xl cursor-pointer hover:text-gray-400 absolute left-2 z-10" onclick="document.getElementById('global-search').focus()"></i>
+                    <input type="text" id="global-search" placeholder="Buscar filmes, séries..." class="w-8 focus:w-64 pl-10 pr-4 py-1 bg-black/50 border border-transparent focus:border-gray-500 rounded-full text-sm text-white transition-all duration-300 outline-none opacity-0 focus:opacity-100 group-hover:w-64 group-hover:opacity-100 cursor-pointer focus:cursor-text group-hover:border-gray-500">
+                </div>
+            `;
+
+            let searchTimeout;
+            document.getElementById('global-search').addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                const query = e.target.value.trim();
+                searchTimeout = setTimeout(() => {
+                    UI.renderContent(query);
+                }, 800); // Aguarda o usuário parar de digitar por 800ms
+            });
+        };
+
+    </script>
+</body>
+</html>
